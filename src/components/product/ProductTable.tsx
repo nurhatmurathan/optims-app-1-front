@@ -1,5 +1,5 @@
 import type { ColumnsType } from "antd/es/table";
-import { Tooltip } from "antd";
+import { Tooltip, Image } from "antd";
 import { CustomTable } from "../common";
 
 export interface ProductCoverType {
@@ -11,24 +11,19 @@ export interface ProductCoverType {
 }
 
 export interface ProductTableProps {
-    /** данные текущей страницы */
     data: ProductCoverType[];
-    /** всего элементов (из бэкенда) */
     total: number;
-    /** номер страницы, 1-based (AntD тоже ждёт 1-based) */
+    /** 1-based страница */
     page: number;
-    /** размер страницы */
     size: number;
-    /** загрузка */
     loading?: boolean;
-    /** коллбек при смене страницы/размера */
     onPageChange?: (page: number, size: number) => void;
-    /** клик по строке (опционально) */
+    /** оставил проп на будущее, но клик по строке убрали, чтобы ссылка работала только по <a> */
     onRowClick?: (record: ProductCoverType) => void;
 }
 
 /** безопасно берём первую картинку */
-function firstImage(srcs: string[] | undefined): string | undefined {
+function firstImage(srcs?: string[]): string | undefined {
     return Array.isArray(srcs) && srcs.length > 0 ? srcs[0] : undefined;
 }
 
@@ -39,26 +34,31 @@ export function ProductTable({
     size,
     loading = false,
     onPageChange,
-    onRowClick,
 }: ProductTableProps) {
     const columns: ColumnsType<ProductCoverType> = [
         {
             title: "Фото",
             dataIndex: "images",
             key: "images",
-            width: 88,
+            width: 96,
             align: "center",
-            render: (imgs: ProductCoverType["images"]) => {
+            render: (imgs) => {
                 const src = firstImage(imgs);
-                return src ? (
-                    // Tailwind классы для аккуратной обрезки
-                    <img
-                        src={src}
-                        alt="product"
-                        className="h-14 w-14 object-cover rounded-md border"
-                    />
-                ) : (
-                    <div className="h-14 w-14 rounded-md border bg-gray-100" />
+                return (
+                    <div className="h-16 w-16 rounded-md overflow-hidden border bg-gray-50 mx-auto">
+                        {src ? (
+                            <Image.PreviewGroup items={imgs}>
+                                <Image
+                                    width={80}
+                                    height={80}
+                                    loading="lazy"
+                                    src={src}
+                                    preview={{ mask: "." }}
+                                    alt="Product"
+                                />
+                            </Image.PreviewGroup>
+                        ) : null}
+                    </div>
                 );
             },
         },
@@ -68,9 +68,9 @@ export function ProductTable({
             key: "title",
             ellipsis: true,
             render: (_, record) => (
-                <div className="max-w-[560px]">
+                <div className="max-w-[560px] leading-snug">
                     <a
-                        href={record.shop_link}
+                        href={`https://kaspi.kz/shop${record.shop_link}`}
                         target="_blank"
                         rel="noreferrer"
                         className="font-medium hover:underline"
@@ -78,9 +78,9 @@ export function ProductTable({
                     >
                         {record.title}
                     </a>
-                    {record.config_sku ? (
+                    {record.config_sku && (
                         <div className="text-xs text-gray-500 mt-0.5">SKU: {record.config_sku}</div>
-                    ) : null}
+                    )}
                 </div>
             ),
         },
@@ -88,7 +88,7 @@ export function ProductTable({
             title: "ID",
             dataIndex: "id",
             key: "id",
-            width: 220,
+            width: 200,
             render: (id: string) => (
                 <Tooltip title="Нажми, чтобы скопировать">
                     <button
@@ -125,20 +125,15 @@ export function ProductTable({
             dataSource={data}
             loading={loading}
             defaultRowKey="id"
-            // аккуратно добавим «зебру» и сохраним внешний rowClassName, если передадут
-            striped
             pagination={{
                 total,
                 current: page,
                 pageSize: size,
                 showSizeChanger: true,
-                pageSizeOptions: [10, 20, 50, 100],
+                pageSizeOptions: [10, 20, 50],
                 onChange: (p, ps) => onPageChange?.(p, ps),
                 showTotal: (t, [from, to]) => `${from}-${to} из ${t}`,
             }}
-            onRow={(record) => ({
-                onClick: () => onRowClick?.(record),
-            })}
             locale={{ emptyText: "Нет данных" }}
         />
     );

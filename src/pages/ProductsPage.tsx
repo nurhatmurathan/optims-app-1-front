@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductTable, SearchInput } from "../components";
 import { useProducts } from "../queries";
 
 export default function ProductsPage() {
-    const [page, setPage] = useState(1); // AntD — 1-based
-    const [size, setSize] = useState(20);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(8);
     const [search, setSearch] = useState("");
+
+    useEffect(() => {
+        setPage(1);
+    }, [search]);
 
     const { data, isLoading } = useProducts({ page, size, search });
 
-    // предполагаю тип пагинации: { total, page, size, data }
     const rows = data?.data ?? [];
     const total = data?.total ?? 0;
 
