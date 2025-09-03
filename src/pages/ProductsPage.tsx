@@ -1,40 +1,56 @@
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
+import { Button, Space } from "antd";
 import { ProductTable, SearchInput } from "../components";
 import { useProducts } from "../queries";
 
 export default function ProductsPage() {
-    const [page, setPage] = useState(1);
-    const [size, setSize] = useState(8);
+    const [page] = useState(1);
+    const [size] = useState(8);
+
     const [search, setSearch] = useState("");
+    const [query, setQuery] = useState("");
 
-    useEffect(() => {
-        setPage(1);
-    }, [search]);
+    const canSearch = useMemo(() => Boolean(search.trim()), [search]);
 
-    const { data, isLoading } = useProducts({ page, size, search });
+    const submitSearch = () => {
+        if (!canSearch) return;
+        setQuery(search.trim());
+    };
+
+    const { data, isLoading } = useProducts(
+        { page, size, search: query },
+        { enabled: Boolean(query) },
+    );
 
     const rows = data?.data ?? [];
     const total = data?.total ?? 0;
 
     return (
         <div className="p-4 space-y-4">
-            {/* поле поиска — твой SearchInput */}
-            <SearchInput searchValue={search} setSearchValue={setSearch} />
+            <Space wrap>
+                <SearchInput searchValue={search} setSearchValue={setSearch} />
+                <Button type="primary" onClick={submitSearch} disabled={!canSearch}>
+                    Найти
+                </Button>
+                {query && (
+                    <Button
+                        onClick={() => {
+                            setSearch("");
+                            setQuery("");
+                        }}
+                    >
+                        Очистить
+                    </Button>
+                )}
+            </Space>
 
             <ProductTable
                 data={rows}
                 total={total}
-                page={page}
+                page={1}
                 size={size}
                 loading={isLoading}
-                onPageChange={(p, ps) => {
-                    setPage(p);
-                    setSize(ps);
-                }}
-                onRowClick={(record) => {
-                    // например, открыть карточку товара
-                    window.open(record.shop_link, "_blank", "noopener,noreferrer");
-                }}
+                hidePagination
             />
         </div>
     );

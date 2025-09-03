@@ -13,13 +13,12 @@ export interface ProductCoverType {
 export interface ProductTableProps {
     data: ProductCoverType[];
     total: number;
-    /** 1-based страница */
     page: number;
     size: number;
     loading?: boolean;
     onPageChange?: (page: number, size: number) => void;
-    /** оставил проп на будущее, но клик по строке убрали, чтобы ссылка работала только по <a> */
     onRowClick?: (record: ProductCoverType) => void;
+    hidePagination?: boolean; // default: true
 }
 
 /** безопасно берём первую картинку */
@@ -34,6 +33,7 @@ export function ProductTable({
     size,
     loading = false,
     onPageChange,
+    hidePagination = true,
 }: ProductTableProps) {
     const columns: ColumnsType<ProductCoverType> = [
         {
@@ -119,21 +119,27 @@ export function ProductTable({
         },
     ];
 
+    const visibleData = hidePagination ? data.slice(0, size) : data;
+
     return (
         <CustomTable<ProductCoverType>
             columns={columns}
-            dataSource={data}
+            dataSource={visibleData}
             loading={loading}
             defaultRowKey="id"
-            pagination={{
-                total,
-                current: page,
-                pageSize: size,
-                showSizeChanger: true,
-                pageSizeOptions: [10, 20, 50],
-                onChange: (p, ps) => onPageChange?.(p, ps),
-                showTotal: (t, [from, to]) => `${from}-${to} из ${t}`,
-            }}
+            pagination={
+                hidePagination
+                    ? false
+                    : {
+                          total,
+                          current: page,
+                          pageSize: size,
+                          showSizeChanger: true,
+                          pageSizeOptions: [10, 20, 50],
+                          onChange: (p, ps) => onPageChange?.(p, ps),
+                          showTotal: (t, [from, to]) => `${from}-${to} из ${t}`,
+                      }
+            }
             locale={{ emptyText: "Нет данных" }}
         />
     );
