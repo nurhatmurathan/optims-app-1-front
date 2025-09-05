@@ -1,6 +1,6 @@
+import { paginatedListProducts } from "@/api";
+import type { PaginatedContent, ProductCoverType } from "@/types";
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import { paginatedListProducts } from "../api";
-import type { PaginatedContent, ProductCoverType } from "../types";
 
 type Params = { page?: number; size?: number; search?: string };
 

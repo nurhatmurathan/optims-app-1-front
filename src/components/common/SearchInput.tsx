@@ -14,7 +14,7 @@ export const SearchInput: FC<SearchInputProps> = ({
 }) => {
     return (
         <Input
-            allowClear
+            allowClear={false}
             placeholder="Поиск"
             value={searchValue}
             className="md:!min-w-[220px] md:max-w-[220px] md:w-auto w-full"

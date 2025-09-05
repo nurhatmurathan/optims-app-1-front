@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button, Space } from "antd";
-import { ProductTable, SearchInput } from "../components";
-import { useProducts } from "../queries";
+import { useProducts } from "@/queries";
+import { ProductTable, SearchInput } from "@/components";
 
 export default function ProductsPage() {
     const [page] = useState(1);

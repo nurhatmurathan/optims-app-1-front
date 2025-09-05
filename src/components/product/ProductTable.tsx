@@ -1,14 +1,7 @@
 import type { ColumnsType } from "antd/es/table";
 import { Tooltip, Image } from "antd";
 import { CustomTable } from "../common";
-
-export interface ProductCoverType {
-    id: string;
-    config_sku?: string;
-    title: string;
-    shop_link: string;
-    images: string[];
-}
+import type { ProductCoverType } from "@/types";
 
 export interface ProductTableProps {
     data: ProductCoverType[];
