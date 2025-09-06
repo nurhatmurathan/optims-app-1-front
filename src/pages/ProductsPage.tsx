@@ -1,14 +1,17 @@
 import { useState, useMemo } from "react";
 import { Button, Space } from "antd";
 import { useProducts } from "@/queries";
-import { ProductTable, SearchInput } from "@/components";
+import { ProductTable, SearchInput, ProductDetail } from "@/components";
 
 export default function ProductsPage() {
     const [page] = useState(1);
-    const [size] = useState(8);
+    const [size] = useState(5);
 
     const [search, setSearch] = useState("");
     const [query, setQuery] = useState("");
+
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [detailOpen, setDetailOpen] = useState(false);
 
     const canSearch = useMemo(() => Boolean(search.trim()), [search]);
 
@@ -51,6 +54,16 @@ export default function ProductsPage() {
                 size={size}
                 loading={isLoading}
                 hidePagination
+                onShowDetail={(id) => {
+                    setSelectedId(id);
+                    setDetailOpen(true);
+                }}
+            />
+
+            <ProductDetail
+                productId={selectedId}
+                open={detailOpen}
+                onClose={() => setDetailOpen(false)}
             />
         </div>
     );

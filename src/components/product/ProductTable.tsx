@@ -1,7 +1,8 @@
 import type { ColumnsType } from "antd/es/table";
-import { Tooltip, Image } from "antd";
+import { Tooltip, Image, Button } from "antd";
 import { CustomTable } from "../common";
 import type { ProductCoverType } from "@/types";
+import { KASPI_SHOP_URL } from "@/config";
 
 export interface ProductTableProps {
     data: ProductCoverType[];
@@ -10,8 +11,8 @@ export interface ProductTableProps {
     size: number;
     loading?: boolean;
     onPageChange?: (page: number, size: number) => void;
-    onRowClick?: (record: ProductCoverType) => void;
     hidePagination?: boolean; // default: true
+    onShowDetail?: (id: string) => void; // 👈 новый проп
 }
 
 /** безопасно берём первую картинку */
@@ -27,6 +28,7 @@ export function ProductTable({
     loading = false,
     onPageChange,
     hidePagination = true,
+    onShowDetail,
 }: ProductTableProps) {
     const columns: ColumnsType<ProductCoverType> = [
         {
@@ -101,13 +103,23 @@ export function ProductTable({
             width: 120,
             render: (href: string) => (
                 <a
-                    href={`https://kaspi.kz/shop${href}`}
+                    href={`${KASPI_SHOP_URL}${href}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs"
                 >
                     Открыть
                 </a>
+            ),
+        },
+        {
+            title: "Детали",
+            key: "detail",
+            width: 150,
+            render: (_, record) => (
+                <Button size="small" onClick={() => onShowDetail?.(record.id)}>
+                    Подробнее
+                </Button>
             ),
         },
     ];

@@ -1,4 +1,4 @@
-import type { PaginatedContent, ProductCoverType } from "../types";
+import type { PaginatedContent, ProductCoverType, ProductDetailType } from "@/types";
 import { api } from "./client";
 
 export function paginatedListProducts(
@@ -11,4 +11,8 @@ export function paginatedListProducts(
             signal,
         })
         .then((r) => r.data);
+}
+
+export function getProductDetail(id: string, signal?: AbortSignal) {
+    return api.get<ProductDetailType>(`/api/products/detail/${id}`, { signal }).then((r) => r.data);
 }
