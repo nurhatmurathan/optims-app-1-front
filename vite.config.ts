@@ -8,4 +8,7 @@ export default defineConfig({
     resolve: {
         alias: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
     },
+    preview: {
+        allowedHosts: ["optims-rating.vercel.app"],
+    },
 });
