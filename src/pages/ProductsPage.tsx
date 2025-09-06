@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { Button, Space } from "antd";
 import { useProducts } from "@/queries";
-import { ProductTable, SearchInput, ProductDetail } from "@/components";
+import { ProductTable, SearchInput } from "@/components";
+import { ProductDetailDrawer } from "@/components/product/ProductDetailDrawer";
 
 export default function ProductsPage() {
     const [page] = useState(1);
@@ -60,7 +61,7 @@ export default function ProductsPage() {
                 }}
             />
 
-            <ProductDetail
+            <ProductDetailDrawer
                 productId={selectedId}
                 open={detailOpen}
                 onClose={() => setDetailOpen(false)}

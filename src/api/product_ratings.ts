@@ -6,8 +6,8 @@ export function productRatings(
     params: {
         session_city_id: string;
         promoted_card: boolean;
-        date_from: Date;
-        date_till: Date;
+        date_from: string;
+        date_till: string;
         session_category_filter_id?: number;
     },
     signal?: AbortSignal,
