@@ -65,7 +65,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                         <div className="flex flex-col gap-3">
                             {/* Большой кадр: квадратная рамка + object-contain */}
                             <div
-                                className="relative w-full aspect-square rounded-lg border bg-white overflow-hidden cursor-zoom-in flex items-center justify-center w-[250px]"
+                                className="relative w-full aspect-square rounded-lg border bg-white overflow-hidden cursor-zoom-in flex items-center justify-center w-[230px]"
                                 onClick={() => openPreviewAt(active)}
                             >
                                 <img

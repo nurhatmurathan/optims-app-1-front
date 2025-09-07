@@ -22,3 +22,21 @@ body,
     height: 100%;
     object-fit: contain;
 }
+
+/* красим подписи и легенду осей под цвета линий */
+.nivo-dual-axis .axis--left text {
+    fill: var(--pos-color) !important;
+}
+.nivo-dual-axis .axis--right text {
+    fill: var(--price-color) !important;
+}
+
+/* по желанию — осевые линии в те же цвета */
+.nivo-dual-axis .axis--left line,
+.nivo-dual-axis .axis--left path.domain {
+    stroke: var(--pos-color) !important;
+}
+.nivo-dual-axis .axis--right line,
+.nivo-dual-axis .axis--right path.domain {
+    stroke: var(--price-color) !important;
+}
