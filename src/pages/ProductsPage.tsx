@@ -1,17 +1,18 @@
-import { useState, useMemo, useCallback, type KeyboardEvent, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, type KeyboardEvent } from "react";
 import {
     Button,
     Space,
     Typography,
     Empty,
     Alert,
-    message,
     Divider,
     Row,
     Col,
     Switch,
     DatePicker,
+    message,
 } from "antd";
+import { useQueryClient } from "@tanstack/react-query";
 import { ProductRatingsChart, SearchInput } from "@/components";
 import { useProduct, type RatingsParams } from "@/queries";
 import { ProductDetailView } from "@/components/product/ProductDetailView";
@@ -24,76 +25,89 @@ const { RangePicker } = DatePicker;
 const DEFAULT_CITY_ID = "750000000";
 
 export default function ProductsPage() {
+    const queryClient = useQueryClient();
+
     const [search, setSearch] = useState("");
     const [productId, setProductId] = useState<string | null>(null);
 
+    // последний успешный результат — показываем его, пока не придёт следующий успех
+    const [persisted, setPersisted] = useState<ProductDetailType | null>(null);
+
+    // ====== ВПЛЫВАЮЩИЙ ALERT (без notification) ======
+    const [errVisible, setErrVisible] = useState(false);
+    const [errText, setErrText] = useState<string>("");
+    const hideTimerRef = useRef<number | null>(null);
+    const showFloatingError = useCallback((text: string, ms = 3000) => {
+        setErrText(text);
+        setErrVisible(true);
+        if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = window.setTimeout(() => setErrVisible(false), ms);
+    }, []);
+    useEffect(() => {
+        return () => {
+            if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+        };
+    }, []);
+    // ================================================
+
     const canSearch = useMemo(() => Boolean(search.trim()), [search]);
+
     const submitSearch = useCallback(() => {
         if (!canSearch) return;
-        setProductId(search.trim());
-    }, [canSearch, search]);
+        const next = search.trim();
+
+        // показать кеш мгновенно (если уже есть)
+        const cached = queryClient.getQueryData<ProductDetailType>(["product-detail", next]);
+        if (cached) setPersisted(cached);
+
+        setProductId(next);
+        queryClient.invalidateQueries({ queryKey: ["product-detail", next] });
+    }, [canSearch, search, queryClient]);
 
     const { data, isLoading, isError, error, isFetching } = useProduct(productId);
 
-    // -------- persist last successful product + non-destructive error --------
-    const [persisted, setPersisted] = useState<ProductDetailType | null>(null);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
+    // При успехе — обновляем persisted; при ошибке — показываем плавающий Alert, контент не трогаем
     useEffect(() => {
         if (data) {
-            setPersisted(data); // сохраняем удачный результат
-            setErrorMsg(null); // очищаем прошлую ошибку
+            setPersisted((prev) => (prev?.id === data.id ? prev : data));
         } else if (isError) {
-            // показываем только баннер, контент оставляем прежним
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const msg = (error as any)?.response?.data?.detail || "Товар с таким SKU не найден";
-            setErrorMsg(msg);
+            const detail = (error as any)?.response?.data?.detail || "Товар с таким SKU не найден";
+            showFloatingError(detail, 3000);
         }
-    }, [data, isError, error]);
+    }, [data, isError, error, showFloatingError]);
 
     const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") submitSearch();
     };
 
-    // ---- ЛОКАЛЬНОЕ СОСТОЯНИЕ КОНТРОЛОВ ----
+    // ---- ЛОКАЛЬНЫЕ КОНТРОЛЫ ДЛЯ ЧАРТА ----
     const [cityId, setCityId] = useState<string>(DEFAULT_CITY_ID);
     const [promoted, setPromoted] = useState<boolean>(false);
     const [range, setRange] = useState<[Dayjs, Dayjs]>([
         dayjs().subtract(1, "month").startOf("day"),
-        dayjs().startOf("day"),
+        dayjs().startOf("day"), // 00:00
     ]);
     const [categoryFilterId, setCategoryFilterId] = useState<number | undefined>(undefined);
-
-    // Параметры, по которым реально строится график (применённые)
     const [appliedParams, setAppliedParams] = useState<RatingsParams | undefined>(undefined);
 
-    // Инициализируем фильтры ТОЛЬКО когда пришёл новый валидный продукт
+    // Сбрасываем фильтры на дефолт ТОЛЬКО при новом успешном товаре
     useEffect(() => {
         if (!data) return;
         const df = dayjs().subtract(1, "month").startOf("day");
         const dt = dayjs().startOf("day");
-
         setCityId(DEFAULT_CITY_ID);
         setPromoted(false);
         setRange([df, dt]);
         setCategoryFilterId(undefined);
-
         setAppliedParams({
             session_city_id: DEFAULT_CITY_ID,
             promoted_card: false,
             date_from: df.toDate(), // 00:00
-            date_till: dt.toDate(), // 00:00 (инклюзив по дате на бэке)
+            date_till: dt.toDate(), // 00:00
             session_category_filter_id: undefined,
         });
-    }, [data]); // <= привязка к успешным данным
-
-    const handleCopySku = async (sku: string) => {
-        await navigator.clipboard.writeText(sku);
-        message.success("SKU скопирован");
-    };
-    const handleOpenShop = (href: string) => {
-        window.open(href, "_blank", "noopener,noreferrer");
-    };
+    }, [data?.id]); // только если пришёл ИМЕННО новый продукт
 
     const applyFilters = () => {
         if (!range?.[0] || !range?.[1]) return;
@@ -131,18 +145,27 @@ export default function ProductsPage() {
 
     return (
         <div className="p-4 space-y-4">
-            {/* верхний баннер об ошибке новой попытки, не прячем прежний контент */}
-            {errorMsg && productId && (
-                <Alert type="error" showIcon message="Не найдено" description={errorMsg} />
+            {/* ВПЛЫВАЮЩЕЕ ОКНО ОШИБКИ (Alert) */}
+            {errVisible && (
+                <div className="fixed right-4 top-4 z-[2500] w-[360px] max-w-[90vw]">
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Не найдено"
+                        description={errText}
+                        closable
+                        afterClose={() => setErrVisible(false)}
+                    />
+                </div>
             )}
 
-            {/* Объяснительный текст */}
+            {/* Инструкция */}
             <Paragraph>
                 <Text strong>Как пользоваться:</Text> Вставьте полный <Text code>SKU</Text> товара и
-                нажмите кнопку <Text strong>«Найти»</Text>
+                нажмите кнопку <Text strong>«Найти»</Text>. При ошибке предыдущие данные останутся.
             </Paragraph>
 
-            {/* Поле поиска */}
+            {/* Поиск */}
             <Space wrap>
                 <SearchInput
                     searchValue={search}
@@ -158,23 +181,10 @@ export default function ProductsPage() {
                 >
                     Найти
                 </Button>
-                {(productId || persisted) && (
-                    <Button
-                        onClick={() => {
-                            setSearch("");
-                            setProductId(null);
-                            setAppliedParams(undefined);
-                            setPersisted(null); // <— очищаем старые детали
-                            setErrorMsg(null); // <— и ошибки тоже
-                        }}
-                    >
-                        Очистить
-                    </Button>
-                )}
             </Space>
 
-            {/* Стартовые/промежуточные состояния (не мешаемся, если у нас уже есть persisted) */}
-            {!productId && !persisted && (
+            {/* Стартовые/лоадинг состояния — только если нет сохранённого результата */}
+            {!persisted && !productId && (
                 <Empty
                     description="Введите SKU товара и нажмите «Найти»"
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -184,18 +194,21 @@ export default function ProductsPage() {
                 <Empty description="Загружаем данные…" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}
 
-            {/* Контент по последнему успешному товару */}
+            {/* Контент последнего успешного запроса */}
             {persisted && (
                 <div className="space-y-6">
                     <ProductDetailView
                         data={persisted}
-                        onCopySku={handleCopySku}
-                        onOpenShop={handleOpenShop}
+                        onCopySku={async (sku) => {
+                            await navigator.clipboard.writeText(sku);
+                            message.success("SKU скопирован");
+                        }}
+                        onOpenShop={(href) => window.open(href, "_blank", "noopener,noreferrer")}
                     />
 
                     <Divider className="!my-0" />
 
-                    {/* Фильтры + график */}
+                    {/* Фильтры */}
                     <div className="space-y-2">
                         <Text type="secondary">Параметры рейтинга</Text>
                         <Row gutter={[12, 12]} align="middle">
@@ -246,6 +259,7 @@ export default function ProductsPage() {
                         </Row>
                     </div>
 
+                    {/* График */}
                     <div>
                         {appliedParams ? (
                             <ProductRatingsChart productId={persisted.id} params={appliedParams} />

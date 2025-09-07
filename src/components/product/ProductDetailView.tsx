@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button, Tag, Typography, Image, Space } from "antd";
-import { LinkOutlined, CopyOutlined } from "@ant-design/icons";
+import { LinkOutlined, CopyOutlined, CheckOutlined } from "@ant-design/icons";
 import type { ProductDetailType } from "@/types";
 import { KASPI_SHOP_URL } from "@/config";
 
@@ -9,11 +9,38 @@ const { Title, Text } = Typography;
 export type ProductDetailViewProps = {
     data: ProductDetailType;
     onCopySku?: (sku: string) => void;
+    onClose?: () => void;
     onOpenShop?: (href: string) => void;
 };
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
-    ({ data, onCopySku, onOpenShop }) => {
+    ({ data, onCopySku, onClose, onOpenShop }) => {
+        // ---- локальный фидбек по копированию ----
+        const [copied, setCopied] = useState(false);
+        const timerRef = useRef<number | null>(null);
+
+        useEffect(() => {
+            // очистка таймера при размонтировании/смене товара
+            return () => {
+                if (timerRef.current) window.clearTimeout(timerRef.current);
+            };
+        }, [data.id]);
+
+        const handleCopyClick = async () => {
+            if (!data.config_sku || copied) return;
+            try {
+                await navigator.clipboard.writeText(data.config_sku);
+                setCopied(true);
+                onCopySku?.(data.config_sku);
+                // показываем птичку ~1.6с
+                if (timerRef.current) window.clearTimeout(timerRef.current);
+                timerRef.current = window.setTimeout(() => setCopied(false), 1600);
+            } catch {
+                // опционально: можно мигнуть красной обводкой/иконкой, если надо
+            }
+        };
+        // -----------------------------------------
+
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Галерея */}
@@ -57,8 +84,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                                 {data.config_sku && (
                                     <Button
                                         size="small"
-                                        icon={<CopyOutlined />}
-                                        onClick={() => onCopySku?.(data.config_sku!)}
+                                        onClick={handleCopyClick}
+                                        disabled={copied}
+                                        icon={copied ? <CheckOutlined /> : <CopyOutlined />}
+                                        // можно чуть визуально отличать успех
+                                        type={copied ? "default" : "primary"}
                                     />
                                 )}
                             </div>
@@ -107,6 +137,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                         >
                             Открыть на площадке
                         </Button>
+                        {onClose && <Button onClick={onClose}>Закрыть</Button>}
                     </Space>
                 </div>
             </div>

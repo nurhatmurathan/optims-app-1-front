@@ -60,7 +60,7 @@ export const ProductRatingsChart: React.FC<Props> = ({ productId, params, height
                 series={[
                     {
                         data: yData,
-                        label: "Rating",
+                        label: "Позиция",
                         showMark: false,
                         valueFormatter: (v) => String(v),
                     },
