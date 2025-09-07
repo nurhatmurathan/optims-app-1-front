@@ -9,10 +9,10 @@ import {
     Alert,
     Space,
     Typography,
-    Input,
+    // Input,
     Switch,
     DatePicker,
-    InputNumber,
+    // InputNumber,
     Button,
     Row,
     Col,
@@ -36,7 +36,7 @@ type ProductDetailDrawerProps = {
 };
 
 export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.memo(
-    ({ productId, open, onClose, height = 540 }) => {
+    ({ productId, open, onClose, height = 800 }) => {
         const { message } = App.useApp?.() ?? { message: { success: () => {} } };
         const { data, isLoading, isError, error } = useProduct(productId);
 
@@ -159,7 +159,7 @@ export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.mem
                         <div className="space-y-2">
                             <Text type="secondary">Параметры рейтинга</Text>
                             <Row gutter={[12, 12]} align="middle">
-                                <Col xs={24} md={6}>
+                                {/* <Col xs={24} md={6}>
                                     <div className="flex flex-col gap-1">
                                         <Text type="secondary" className="text-xs">
                                             session_city_id
@@ -170,7 +170,7 @@ export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.mem
                                             onChange={(e) => setCityId(e.target.value)}
                                         />
                                     </div>
-                                </Col>
+                                </Col> */}
 
                                 <Col xs={24} md={6}>
                                     <div className="flex flex-col gap-1">
@@ -182,6 +182,7 @@ export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.mem
                                             onChange={(v) => setPromoted(v)}
                                             checkedChildren="Да"
                                             unCheckedChildren="Нет"
+                                            style={{ maxWidth: 80 }}
                                         />
                                     </div>
                                 </Col>
@@ -203,7 +204,7 @@ export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.mem
                                     </div>
                                 </Col>
 
-                                <Col xs={24} md={4}>
+                                {/* <Col xs={24} md={4}>
                                     <div className="flex flex-col gap-1">
                                         <Text type="secondary" className="text-xs">
                                             session_category_filter_id
@@ -227,7 +228,7 @@ export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.mem
                                             </Button>
                                         </div>
                                     </div>
-                                </Col>
+                                </Col> */}
 
                                 <Col xs={24} md={24}>
                                     <Space>

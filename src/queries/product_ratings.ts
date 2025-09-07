@@ -7,12 +7,11 @@ import dayjs from "dayjs";
 export type RatingsParams = {
     session_city_id: string;
     promoted_card: boolean;
-    date_from: Date; // в UI держим Date
-    date_till: Date; // в UI держим Date
+    date_from: Date;
+    date_till: Date;
     session_category_filter_id?: number;
 };
 
-// В проводку на бек отправляем строки YYYY-MM-DD
 type RatingsParamsWire = Omit<RatingsParams, "date_from" | "date_till"> & {
     date_from: string;
     date_till: string;

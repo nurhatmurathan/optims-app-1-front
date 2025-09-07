@@ -13,7 +13,7 @@ type Props = {
 };
 
 function computeRatingPoint(r: ProductRatingCoverType): number {
-    return (r.page + 1) * 12 + (r.place + 1); // rating
+    return r.page * 12 + (r.place + 1); // rating
 }
 
 const df = new Intl.DateTimeFormat("ru-RU", { month: "short", day: "2-digit" });
