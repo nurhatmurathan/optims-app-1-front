@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button, Tag, Typography, Image, Space } from "antd";
 import { LinkOutlined, CopyOutlined, CheckOutlined } from "@ant-design/icons";
 import type { ProductDetailType } from "@/types";
@@ -13,14 +13,15 @@ export type ProductDetailViewProps = {
     onOpenShop?: (href: string) => void;
 };
 
+// const MAIN_H = 100; // высота большой рамки
+// const THUMB = 40; // размер превью
+
 export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
     ({ data, onCopySku, onClose, onOpenShop }) => {
-        // ---- локальный фидбек по копированию ----
+        // ---- копирование SKU с "птичкой" ----
         const [copied, setCopied] = useState(false);
         const timerRef = useRef<number | null>(null);
-
         useEffect(() => {
-            // очистка таймера при размонтировании/смене товара
             return () => {
                 if (timerRef.current) window.clearTimeout(timerRef.current);
             };
@@ -32,39 +33,92 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                 await navigator.clipboard.writeText(data.config_sku);
                 setCopied(true);
                 onCopySku?.(data.config_sku);
-                // показываем птичку ~1.6с
                 if (timerRef.current) window.clearTimeout(timerRef.current);
                 timerRef.current = window.setTimeout(() => setCopied(false), 1600);
             } catch {
-                // опционально: можно мигнуть красной обводкой/иконкой, если надо
+                /* empty */
             }
         };
-        // -----------------------------------------
+
+        // ---- галерея с большим кадром + превью + PreviewGroup ----
+        const images = data.images ?? [];
+        const [active, setActive] = useState(0);
+        const [previewOpen, setPreviewOpen] = useState(false);
+        const [previewIndex, setPreviewIndex] = useState(0);
+
+        useEffect(() => {
+            setActive(0);
+            setPreviewIndex(0);
+            setPreviewOpen(false);
+        }, [data.id]);
+
+        const openPreviewAt = useCallback((idx: number) => {
+            setPreviewIndex(idx);
+            setPreviewOpen(true);
+        }, []);
 
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Галерея */}
                 <div className="md:col-span-1">
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                        {data.images?.length ? (
-                            data.images.map((src, i) => (
-                                <Image
-                                    key={i}
-                                    src={src}
-                                    width={120}
-                                    height={120}
-                                    className="rounded-lg object-cover"
-                                    placeholder
+                    {(data.images?.length ?? 0) > 0 ? (
+                        <div className="flex flex-col gap-3">
+                            {/* Большой кадр: квадратная рамка + object-contain */}
+                            <div
+                                className="relative w-full aspect-square rounded-lg border bg-white overflow-hidden cursor-zoom-in flex items-center justify-center w-[250px]"
+                                onClick={() => openPreviewAt(active)}
+                            >
+                                <img
+                                    src={images[active]}
+                                    alt={`img-${active}`}
+                                    className="absolute inset-0 w-full h-full object-contain"
+                                    loading="lazy"
                                 />
-                            ))
-                        ) : (
-                            <div className="w-full flex items-center justify-center">
-                                <Text type="secondary">Нет изображений</Text>
                             </div>
-                        )}
-                    </div>
-                </div>
 
+                            {/* Превьюшки: тоже квадратные рамки + object-contain */}
+                            <div className="grid grid-cols-5 gap-2 md:grid-cols-8">
+                                {images.map((src, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        onClick={() => setActive(i)}
+                                        onDoubleClick={() => openPreviewAt(i)}
+                                        className={`relative aspect-square w-[72px] rounded-lg border bg-white overflow-hidden flex items-center justify-center
+              ${i === active ? "ring-2 ring-blue-500" : ""}`}
+                                    >
+                                        <img
+                                            src={src}
+                                            alt={`thumb-${i}`}
+                                            className="absolute inset-0 w-full h-full object-contain"
+                                            loading="lazy"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Невидимая коллекция для лайтбокса со стрелками */}
+                            <div style={{ display: "none" }}>
+                                <Image.PreviewGroup
+                                    preview={{
+                                        visible: previewOpen,
+                                        onVisibleChange: (v) => setPreviewOpen(v),
+                                        current: previewIndex,
+                                        onChange: (idx) => setPreviewIndex(idx),
+                                    }}
+                                >
+                                    {images.map((src, i) => (
+                                        <Image key={`pg-${i}`} src={src} />
+                                    ))}
+                                </Image.PreviewGroup>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="w-full aspect-square flex items-center justify-center border rounded-lg bg-white">
+                            <Text type="secondary">Нет изображений</Text>
+                        </div>
+                    )}
+                </div>
                 {/* Основная информация */}
                 <div className="md:col-span-2 space-y-3">
                     <Title level={4} className="!mb-0">
@@ -87,7 +141,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                                         onClick={handleCopyClick}
                                         disabled={copied}
                                         icon={copied ? <CheckOutlined /> : <CopyOutlined />}
-                                        // можно чуть визуально отличать успех
                                         type={copied ? "default" : "primary"}
                                     />
                                 )}
