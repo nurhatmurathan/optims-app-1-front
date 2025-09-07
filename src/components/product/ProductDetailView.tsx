@@ -9,12 +9,11 @@ const { Title, Text } = Typography;
 export type ProductDetailViewProps = {
     data: ProductDetailType;
     onCopySku?: (sku: string) => void;
-    onClose?: () => void;
     onOpenShop?: (href: string) => void;
 };
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
-    ({ data, onCopySku, onClose, onOpenShop }) => {
+    ({ data, onCopySku, onOpenShop }) => {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Галерея */}
@@ -108,7 +107,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                         >
                             Открыть на площадке
                         </Button>
-                        {onClose && <Button onClick={onClose}>Закрыть</Button>}
                     </Space>
                 </div>
             </div>

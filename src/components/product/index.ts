@@ -1,2 +1,3 @@
 export { ProductTable } from "./ProductTable";
-export { ProductDetail } from "./ProductDetail";
+export { ProductDetailView } from "./ProductDetailView";
+export { ProductRatingsChart } from "./ProductRatingsChart";

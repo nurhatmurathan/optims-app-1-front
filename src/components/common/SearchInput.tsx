@@ -1,25 +1,28 @@
+// SearchInput.tsx
 import { Input } from "antd";
-import type { FC } from "react";
+import type { FC, KeyboardEvent } from "react";
 
 interface SearchInputProps {
     searchValue: string;
+    placeholder?: string;
     setSearchValue: (value: string) => void;
-    onEnterPress?: () => void;
+    onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
 }
 
 export const SearchInput: FC<SearchInputProps> = ({
     searchValue,
+    placeholder = "Поиск",
     setSearchValue,
-    onEnterPress,
+    onKeyDown,
 }) => {
     return (
         <Input
-            allowClear={false}
-            placeholder="Поиск"
+            allowClear
+            placeholder={placeholder}
             value={searchValue}
             className="md:!min-w-[220px] md:max-w-[220px] md:w-auto w-full"
             onChange={(e) => setSearchValue(e.target.value)}
-            onPressEnter={onEnterPress}
+            onKeyDown={onKeyDown}
         />
     );
 };

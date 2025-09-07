@@ -12,7 +12,7 @@ export function getErrorMessage(err: unknown): string {
     return (
         any?.response?.data?.detail ??
         any?.response?.data?.message ??
-        any?.message ??
+        any?.detail ??
         "Unknown error"
     );
 }

@@ -150,7 +150,6 @@ export const ProductDetailDrawer: React.FC<ProductDetailDrawerProps> = React.mem
                             data={data}
                             onCopySku={handleCopySku}
                             onOpenShop={handleOpenShop}
-                            onClose={onClose}
                         />
 
                         <Divider className="!my-0" />
