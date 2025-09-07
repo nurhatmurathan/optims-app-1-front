@@ -162,7 +162,7 @@ export default function ProductsPage() {
             {/* Инструкция */}
             <Paragraph>
                 <Text strong>Как пользоваться:</Text> Вставьте полный <Text code>SKU</Text> товара и
-                нажмите кнопку <Text strong>«Найти»</Text>. При ошибке предыдущие данные останутся.
+                нажмите кнопку <Text strong>«Найти»</Text>
             </Paragraph>
 
             {/* Поиск */}
