@@ -12,7 +12,6 @@ import {
     DatePicker,
     message,
 } from "antd";
-import { useQueryClient } from "@tanstack/react-query";
 import { ProductRatingsChart, SearchInput } from "@/components";
 import { useProduct, type RatingsParams } from "@/queries";
 import { ProductDetailView } from "@/components/product/ProductDetailView";
@@ -25,15 +24,13 @@ const { RangePicker } = DatePicker;
 const DEFAULT_CITY_ID = "750000000";
 
 export default function ProductsPage() {
-    const queryClient = useQueryClient();
-
     const [search, setSearch] = useState("");
     const [productId, setProductId] = useState<string | null>(null);
 
     // последний успешный результат — показываем его, пока не придёт следующий успех
     const [persisted, setPersisted] = useState<ProductDetailType | null>(null);
 
-    // ====== ВПЛЫВАЮЩИЙ ALERT (без notification) ======
+    // ====== ВПЛЫВАЮЩИЙ ALERT ======
     const [errVisible, setErrVisible] = useState(false);
     const [errText, setErrText] = useState<string>("");
     const hideTimerRef = useRef<number | null>(null);
@@ -55,14 +52,8 @@ export default function ProductsPage() {
     const submitSearch = useCallback(() => {
         if (!canSearch) return;
         const next = search.trim();
-
-        // показать кеш мгновенно (если уже есть)
-        const cached = queryClient.getQueryData<ProductDetailType>(["product-detail", next]);
-        if (cached) setPersisted(cached);
-
         setProductId(next);
-        queryClient.invalidateQueries({ queryKey: ["product-detail", next] });
-    }, [canSearch, search, queryClient]);
+    }, [canSearch, search]);
 
     const { data, isLoading, isError, error, isFetching } = useProduct(productId);
 
@@ -86,7 +77,7 @@ export default function ProductsPage() {
     const [promoted, setPromoted] = useState<boolean>(false);
     const [range, setRange] = useState<[Dayjs, Dayjs]>([
         dayjs().subtract(1, "month").startOf("day"),
-        dayjs().startOf("day"), // 00:00
+        dayjs().startOf("day"),
     ]);
     const [categoryFilterId, setCategoryFilterId] = useState<number | undefined>(undefined);
     const [appliedParams, setAppliedParams] = useState<RatingsParams | undefined>(undefined);
@@ -94,7 +85,7 @@ export default function ProductsPage() {
     // Сбрасываем фильтры на дефолт ТОЛЬКО при новом успешном товаре
     useEffect(() => {
         if (!data) return;
-        const df = dayjs().subtract(1, "month").startOf("day");
+        const df = dayjs().subtract(2, "month").startOf("day");
         const dt = dayjs().startOf("day");
         setCityId(DEFAULT_CITY_ID);
         setPromoted(false);
@@ -151,7 +142,7 @@ export default function ProductsPage() {
                     <Alert
                         type="error"
                         showIcon
-                        message="Не найдено"
+                        message="Ошибка"
                         description={errText}
                         closable
                         afterClose={() => setErrVisible(false)}

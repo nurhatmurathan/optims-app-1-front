@@ -9,15 +9,11 @@ const { Title, Text } = Typography;
 export type ProductDetailViewProps = {
     data: ProductDetailType;
     onCopySku?: (sku: string) => void;
-    onClose?: () => void;
     onOpenShop?: (href: string) => void;
 };
 
-// const MAIN_H = 100; // высота большой рамки
-// const THUMB = 40; // размер превью
-
 export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
-    ({ data, onCopySku, onClose, onOpenShop }) => {
+    ({ data, onCopySku, onOpenShop }) => {
         // ---- копирование SKU с "птичкой" ----
         const [copied, setCopied] = useState(false);
         const timerRef = useRef<number | null>(null);
@@ -190,7 +186,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = React.memo(
                         >
                             Открыть на площадке
                         </Button>
-                        {onClose && <Button onClick={onClose}>Закрыть</Button>}
                     </Space>
                 </div>
             </div>
