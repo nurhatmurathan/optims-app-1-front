@@ -63,10 +63,10 @@ export const ProductRatingsChart: React.FC<Props> = ({ productId, params, height
         const priceMax = Math.max(...priceVals);
         const hasPrice = isFinite(priceMin) && isFinite(priceMax);
 
-        const priceToY = (p: number) =>
-            posMin + ((p - priceMin) * (posMax - posMin)) / Math.max(1, priceMax - priceMin);
-        const yToPrice = (y: number) =>
-            priceMin + ((y - posMin) * Math.max(1, priceMax - priceMin)) / (posMax - posMin);
+        const denom = Math.max(1, priceMax - priceMin);
+        const priceToY = (p: number) => posMax - ((p - priceMin) * (posMax - posMin)) / denom;
+
+        const yToPrice = (y: number) => priceMin + ((posMax - y) * denom) / (posMax - posMin);
 
         const positionSeries = { id: "Позиция", data: src.map((d) => ({ x: d.date, y: d.pos })) };
         const priceSeries = hasPrice
