@@ -9,6 +9,10 @@ type Props = { productId: string; params: RatingsParams; height?: number };
 const POSITION_COLOR = "#ef4444"; // красный
 const PRICE_COLOR = "#f59e0b"; // оранжевый
 
+// ширина на одну точку и базовый минимум
+const PX_PER_POINT = 36;
+const BASE_MIN_WIDTH = 720;
+
 function computeRatingPoint(r: ProductRatingCoverType): number {
     return r.page * 12 + (r.place + 1);
 }
@@ -63,9 +67,9 @@ export const ProductRatingsChart: React.FC<Props> = ({ productId, params, height
         const priceMax = Math.max(...priceVals);
         const hasPrice = isFinite(priceMin) && isFinite(priceMax);
 
+        // << главная часть из прошлой правки: позиция reverse, цена "обычно" >>
         const denom = Math.max(1, priceMax - priceMin);
         const priceToY = (p: number) => posMax - ((p - priceMin) * (posMax - posMin)) / denom;
-
         const yToPrice = (y: number) => priceMin + ((posMax - y) * denom) / (posMax - posMin);
 
         const positionSeries = { id: "Позиция", data: src.map((d) => ({ x: d.date, y: d.pos })) };
@@ -104,110 +108,126 @@ export const ProductRatingsChart: React.FC<Props> = ({ productId, params, height
     if (isError || dataSeries[0].data.length === 0)
         return <Empty description="Нет данных для графика" />;
 
+    // минимальная ширина графика = max(база, число точек * пикселей на точку)
+    const pointCount = dataSeries[0]?.data.length ?? 0;
+    const minWidth = Math.max(BASE_MIN_WIDTH, pointCount * PX_PER_POINT);
+
     return (
-        // прокинем CSS-переменные для осей
-        <div
-            className="w-full overflow-x-auto nivo-dual-axis"
-            style={{
-                height,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ["--pos-color" as any]: POSITION_COLOR,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ["--price-color" as any]: PRICE_COLOR,
-            }}
-        >
-            <ResponsiveLine
-                data={dataSeries}
-                margin={{ top: 20, right: 80, bottom: 28, left: 48 }}
-                xScale={{ type: "time", format: "native", useUTC: false, precision: "day" }}
-                xFormat={(v) => df.format(v as Date)}
-                yScale={{ type: "linear", min: "auto", max: "auto", reverse: true }}
-                yFormat={(v) => `${v}`}
-                axisBottom={{ tickPadding: 2, tickSize: 0, format: (v) => df.format(v as Date) }}
-                axisLeft={{
-                    tickPadding: 6,
-                    tickSize: 0,
-                    legend: "Позиция",
-                    legendOffset: -40,
-                    legendPosition: "middle",
+        // 1) контейнер со скроллом
+        <div className="w-full overflow-x-auto">
+            {/* 2) внутренний блок шире малого экрана => появится горизонтальный скролл */}
+            <div
+                className="nivo-dual-axis"
+                style={{
+                    height,
+                    minWidth,
+                    // css-переменные для раскраски осей
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ["--pos-color" as any]: POSITION_COLOR,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ["--price-color" as any]: PRICE_COLOR,
                 }}
-                axisRight={
-                    rightAxis
-                        ? {
-                              tickPadding: 6,
-                              tickSize: 0,
-                              legend: "Цена (мин)",
-                              legendOffset: 54,
-                              legendPosition: "middle",
-                              tickValues: rightAxis.tickValues as number[],
-                              format: rightAxis.format as (v: number | string | Date) => string,
-                          }
-                        : undefined
-                }
-                enablePoints
-                pointSize={4}
-                enableGridX={false}
-                enableGridY
-                useMesh
-                legends={[
-                    {
-                        anchor: "top-left",
-                        direction: "row",
-                        translateX: 0,
-                        translateY: -12,
-                        itemWidth: 110,
-                        itemHeight: 18,
-                        itemsSpacing: 12,
-                        symbolSize: 10,
-                        symbolShape: "circle",
-                    },
-                ]}
-                // зафиксируем цвета серий
-                colors={({ id }) => (id === "Позиция" ? POSITION_COLOR : PRICE_COLOR)}
-                enableSlices="x"
-                sliceTooltip={({ slice }) => {
-                    const date = slice.points[0]?.data.x as Date;
-                    return (
-                        <div
-                            style={{
-                                background: "rgba(0,0,0,.75)",
-                                color: "white",
-                                padding: "6px 8px",
-                                fontSize: 12,
-                                borderRadius: 6,
-                            }}
-                        >
-                            <div style={{ marginBottom: 4 }}>{df.format(date)}</div>
-                            {slice.points.map((p) => {
-                                const color =
-                                    p.seriesId === "Позиция" ? POSITION_COLOR : PRICE_COLOR;
-                                const isPrice = p.seriesId === "Цена (мин)";
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                const rawPrice = (p.data as any).rawPrice;
-                                return (
-                                    <div
-                                        key={p.id}
-                                        style={{ display: "flex", alignItems: "center", gap: 6 }}
-                                    >
-                                        <span
+            >
+                <ResponsiveLine
+                    data={dataSeries}
+                    margin={{ top: 20, right: 80, bottom: 28, left: 48 }}
+                    xScale={{ type: "time", format: "native", useUTC: false, precision: "day" }}
+                    xFormat={(v) => df.format(v as Date)}
+                    yScale={{ type: "linear", min: "auto", max: "auto", reverse: true }}
+                    yFormat={(v) => `${v}`}
+                    axisBottom={{
+                        tickPadding: 2,
+                        tickSize: 0,
+                        format: (v) => df.format(v as Date),
+                    }}
+                    axisLeft={{
+                        tickPadding: 6,
+                        tickSize: 0,
+                        legend: "Позиция",
+                        legendOffset: -40,
+                        legendPosition: "middle",
+                    }}
+                    axisRight={
+                        rightAxis
+                            ? {
+                                  tickPadding: 6,
+                                  tickSize: 0,
+                                  legend: "Цена (мин)",
+                                  legendOffset: 54,
+                                  legendPosition: "middle",
+                                  tickValues: rightAxis.tickValues as number[],
+                                  format: rightAxis.format as (v: number | string | Date) => string,
+                              }
+                            : undefined
+                    }
+                    enablePoints
+                    pointSize={4}
+                    enableGridX={false}
+                    enableGridY
+                    useMesh
+                    legends={[
+                        {
+                            anchor: "top-left",
+                            direction: "row",
+                            translateX: 0,
+                            translateY: -22,
+                            itemWidth: 110,
+                            itemHeight: 18,
+                            itemsSpacing: 12,
+                            symbolSize: 10,
+                            symbolShape: "circle",
+                        },
+                    ]}
+                    colors={({ id }) => (id === "Позиция" ? POSITION_COLOR : PRICE_COLOR)}
+                    enableSlices="x"
+                    sliceTooltip={({ slice }) => {
+                        const date = slice.points[0]?.data.x as Date;
+                        return (
+                            <div
+                                style={{
+                                    background: "rgba(0,0,0,.75)",
+                                    color: "white",
+                                    padding: "6px 8px",
+                                    fontSize: 12,
+                                    borderRadius: 6,
+                                }}
+                            >
+                                <div style={{ marginBottom: 4 }}>{df.format(date)}</div>
+                                {slice.points.map((p) => {
+                                    const color =
+                                        p.seriesId === "Позиция" ? POSITION_COLOR : PRICE_COLOR;
+                                    const isPrice = p.seriesId === "Цена (мин)";
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    const rawPrice = (p.data as any).rawPrice;
+                                    return (
+                                        <div
+                                            key={p.id}
                                             style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: 999,
-                                                background: color,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 6,
                                             }}
-                                        />
-                                        <span style={{ color }}>
-                                            {p.seriesId}:{" "}
-                                            {isPrice ? kzt.format(rawPrice) : p.data.yFormatted}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    );
-                }}
-            />
+                                        >
+                                            <span
+                                                style={{
+                                                    width: 8,
+                                                    height: 8,
+                                                    borderRadius: 999,
+                                                    background: color,
+                                                }}
+                                            />
+                                            <span style={{ color }}>
+                                                {p.seriesId}:{" "}
+                                                {isPrice ? kzt.format(rawPrice) : p.data.yFormatted}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    }}
+                />
+            </div>
         </div>
     );
 };
