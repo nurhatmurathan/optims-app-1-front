@@ -10,7 +10,7 @@ const POSITION_COLOR = "#ef4444"; // красный
 const PRICE_COLOR = "#f59e0b"; // оранжевый
 
 // ширина на одну точку и базовый минимум
-const PX_PER_POINT = 36;
+const PX_PER_POINT = 10;
 const BASE_MIN_WIDTH = 720;
 
 function computeRatingPoint(r: ProductRatingCoverType): number {

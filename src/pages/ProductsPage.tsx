@@ -206,7 +206,7 @@ export default function ProductsPage() {
                             <Col xs={24} md={6}>
                                 <div className="flex flex-col gap-1">
                                     <Text type="secondary" className="text-xs">
-                                        promoted_card
+                                        Рекалама
                                     </Text>
                                     <Switch
                                         checked={promoted}
@@ -231,6 +231,7 @@ export default function ProductsPage() {
                                             setRange([v[0], v[1]]);
                                         }}
                                         format="DD.MM.YYYY"
+                                        style={{ width: "80%" }}
                                     />
                                 </div>
                             </Col>
