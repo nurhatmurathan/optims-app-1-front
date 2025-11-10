@@ -226,7 +226,7 @@ export default function ProductsPage() {
                             <Col xs={24} md={6}>
                                 <div className="flex flex-col gap-1">
                                     <Text type="secondary" className="text-xs">
-                                        Рекалама
+                                        Реклама
                                     </Text>
                                     <Switch
                                         checked={promoted}
