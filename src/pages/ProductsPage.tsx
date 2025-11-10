@@ -10,6 +10,7 @@ import {
     Col,
     Switch,
     DatePicker,
+    Select,
     message,
 } from "antd";
 import { ProductRatingsChart, SearchInput } from "@/components";
@@ -21,7 +22,17 @@ import dayjs, { Dayjs } from "dayjs";
 const { Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
 
-const DEFAULT_CITY_ID = "750000000";
+const CITY_OPTIONS = [
+    { label: "Алматы", value: "750000000" },
+    { label: "Астана", value: "710000000" },
+] satisfies Array<{ label: string; value: string }>;
+const DEFAULT_CITY_ID = CITY_OPTIONS[0].value;
+const getTomorrowStart = () => dayjs().add(1, "day").startOf("day");
+const createRange = (monthsBack: number): [Dayjs, Dayjs] => {
+    const dateFrom = dayjs().subtract(monthsBack, "month").startOf("day");
+    const dateTill = getTomorrowStart();
+    return [dateFrom, dateTill];
+};
 
 export default function ProductsPage() {
     const [search, setSearch] = useState("");
@@ -75,18 +86,14 @@ export default function ProductsPage() {
     // ---- ЛОКАЛЬНЫЕ КОНТРОЛЫ ДЛЯ ЧАРТА ----
     const [cityId, setCityId] = useState<string>(DEFAULT_CITY_ID);
     const [promoted, setPromoted] = useState<boolean>(false);
-    const [range, setRange] = useState<[Dayjs, Dayjs]>([
-        dayjs().subtract(1, "month").startOf("day"),
-        dayjs().startOf("day"),
-    ]);
+    const [range, setRange] = useState<[Dayjs, Dayjs]>(() => createRange(1));
     const [categoryFilterId, setCategoryFilterId] = useState<number | undefined>(undefined);
     const [appliedParams, setAppliedParams] = useState<RatingsParams | undefined>(undefined);
 
     // Сбрасываем фильтры на дефолт ТОЛЬКО при новом успешном товаре
     useEffect(() => {
         if (!data) return;
-        const df = dayjs().subtract(2, "month").startOf("day");
-        const dt = dayjs().startOf("day");
+        const [df, dt] = createRange(2);
         setCityId(DEFAULT_CITY_ID);
         setPromoted(false);
         setRange([df, dt]);
@@ -114,8 +121,7 @@ export default function ProductsPage() {
     };
 
     const resetFilters = () => {
-        const df = dayjs().subtract(1, "month").startOf("day");
-        const dt = dayjs().startOf("day");
+        const [df, dt] = createRange(1);
         setCityId(DEFAULT_CITY_ID);
         setPromoted(false);
         setRange([df, dt]);
@@ -203,6 +209,20 @@ export default function ProductsPage() {
                     <div className="space-y-2">
                         <Text type="secondary">Параметры рейтинга</Text>
                         <Row gutter={[12, 12]} align="middle">
+                            <Col xs={24} md={8}>
+                                <div className="flex flex-col gap-1">
+                                    <Text type="secondary" className="text-xs">
+                                        Город
+                                    </Text>
+                                    <Select
+                                        value={cityId}
+                                        onChange={(value: string) => setCityId(value)}
+                                        options={CITY_OPTIONS}
+                                        style={{ width: "100%" }}
+                                    />
+                                </div>
+                            </Col>
+
                             <Col xs={24} md={6}>
                                 <div className="flex flex-col gap-1">
                                     <Text type="secondary" className="text-xs">
@@ -218,7 +238,7 @@ export default function ProductsPage() {
                                 </div>
                             </Col>
 
-                            <Col xs={24} md={8}>
+                            <Col xs={24} md={10}>
                                 <div className="flex flex-col gap-1">
                                     <Text type="secondary" className="text-xs">
                                         Период
@@ -231,7 +251,7 @@ export default function ProductsPage() {
                                             setRange([v[0], v[1]]);
                                         }}
                                         format="DD.MM.YYYY"
-                                        style={{ width: "80%" }}
+                                        style={{ width: "100%" }}
                                     />
                                 </div>
                             </Col>
